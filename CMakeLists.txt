@@ -1,4 +1,16 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.10)
+project(multithread CXX)
 
-project(multithread)
-add_executable(${PROJECT_NAME} "main.cpp")
+set(CMAKE_CXX_STANDARD 17)
+
+include_directories(../googletest-master/googletest/include)
+include_directories(../googletest-master/googletest/)
+include_directories(header)
+
+add_executable(multithread image_fifo.h image_fifo.cpp main.cpp)
+
+target_link_libraries(multithread /home/valmit/CLionProjects/googletest-master/lib/libgtest.a)
+
+find_package(Threads)
+
+target_link_libraries(multithread pthread)

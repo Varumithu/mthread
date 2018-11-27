@@ -5,15 +5,15 @@
 #ifndef MULTITHREAD_IMAGE_FIFO_H
 #define MULTITHREAD_IMAGE_FIFO_H
 
-#include <set>
+#include <map>
 #include <mutex>
 #include <list>
 
 class ImageFIFO final{
 private:
     std::mutex ImageGuard;
-    std::list<void*> free, ready;
-    std::set<void*> InUseReading, InUseWriting;
+    std::list<std::pair<void*, size_t>> free, ready;
+    std::map<void*, size_t> InUseReading, InUseWriting;
     //size_t blockSize, maxBlocks; // I don't use them anywhere except in ctor but I sort of feel like I should? Like some assertions or something?
 public:
     ~ImageFIFO();
