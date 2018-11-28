@@ -8,7 +8,7 @@
 #include <vector>
 #include <fstream>
 #include <cstring>
-#include <memory>
+#include <iostream>
 
 #include "image_fifo.h"
 
@@ -19,13 +19,16 @@ void test_function_writer(ImageFIFO& shared) {
     for (;;) {
         p = reinterpret_cast<int*>(shared.getFree());
         if (p != nullptr) {
+//            std::cout << "writer doing something" << std::endl;
             *p = arr[i];
             shared.addReady(p);
             p = nullptr;
             ++i;
         }
-        else
+        else {
+//            std::cout << "writer yielding" << std::endl;
             std::this_thread::yield();
+        }
         if (i == 5)
             break;
     }
@@ -36,13 +39,16 @@ void test_function_reader(ImageFIFO& shared, std::vector<int>& res) {
     while(1 == 1) {
         void* p = shared.getReady();
         if (p != nullptr) {
+//            std::cout << "reader doing something" << std::endl;
             ++count;
             res.push_back(*reinterpret_cast<int*>(p));
             shared.addFree(p);
             p = nullptr;
         }
-        else
+        else {
+//            std::cout << "reader yielding" << std::endl;
             std::this_thread::yield();
+        }
         if (count == 5)
             break;
     }
@@ -78,7 +84,7 @@ TEST(FIFO_testing, SmallTestTwoThreads) {
 }
 
 TEST(FIFO_testing, SmallTestNotEnoughSpaceForAll) {
-    ImageFIFO imfif(sizeof(int), 2); // only two spots in FIFO so writer will have to wait for reader to free spot sometimes i hope
+    ImageFIFO imfif(sizeof(int), 2); // only two spots in FIFO so writer will have to wait for reader to free spot sometimes
     std::vector<int> res;
     std::thread t1(test_function_writer, std::ref(imfif));
     std::thread t2(test_function_reader, std::ref(imfif), std::ref(res));
@@ -93,13 +99,16 @@ void test_function_picture_reader(ImageFIFO& imfif, std::vector<char*>& res, siz
     while (1 == 1) {
         void* p = imfif.getReady();
         if (p != nullptr) {
+//             std::cout << "reader doing something" << std::endl;
             std::memcpy(res[count], p, file_size);
             ++count;
             imfif.addFree(p);
             p = nullptr;
         }
-        else
+        else {
+//             std::cout << "reader yielding" << std::endl;
             std::this_thread::yield();
+        }
         if (count == 10)
             break;
     }
@@ -110,13 +119,16 @@ void test_function_picture_writer(ImageFIFO& imfif, std::ifstream& kitty, long f
     while(1 == 1) {
         void* p = imfif.getFree();
         if (p != nullptr) {
+//             std::cout << "writer doing something" << std::endl;
             kitty.get(reinterpret_cast<char*>(p), file_size, EOF);
             ++count;
             imfif.addReady(p);
             p = nullptr;
         }
-        else
+        else {
+//            std::cout << "writer yielding" << std::endl;
             std::this_thread::yield();
+        }
         if (count == 10) {
             break;
         }
@@ -139,6 +151,60 @@ TEST(FIFO_testing, PictureTest) {
     reader.join();
 }
 
+void test_function_writer_for_2rtest(ImageFIFO& shared) {
+    int arr[10] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+    int* p = nullptr;
+    size_t i = 0;
+    for (;;) {
+        p = reinterpret_cast<int*>(shared.getFree());
+        if (p != nullptr) {
+//            std::cout << "writer doing something" << std::endl;
+            *p = arr[i];
+            shared.addReady(p);
+            p = nullptr;
+            ++i;
+        }
+        else {
+//            std::cout << "writer yielding" << std::endl;
+            std::this_thread::yield();
+        }
+        if (i == 10)
+            break;
+    }
+}
+
+void test_function_reader_for_2rtest(ImageFIFO& shared, std::vector<int>& res) {
+    size_t count = 0;
+    while(1 == 1) {
+        void* p = shared.getReady();
+        if (p != nullptr) {
+//            std::cout << "reader doing something" << std::endl;
+            ++count;
+            res.push_back(*reinterpret_cast<int*>(p));
+            shared.addFree(p);
+            p = nullptr;
+        }
+        else {
+//            std::cout << "reader yielding" << std::endl;
+            std::this_thread::yield();
+        }
+        if (count == 5)
+            break;
+    }
+}
+
+TEST(FIFO_testing, TwoReadersTest) { // so if this passes i think that means that the logic that makes order of getting ready blocks good works
+    ImageFIFO imfif(sizeof(int), 10);
+    std::vector<int> res;
+    std::thread t1(test_function_writer_for_2rtest, std::ref(imfif));
+    std::thread t2(test_function_reader_for_2rtest, std::ref(imfif), std::ref(res));
+    std::thread t3(test_function_reader_for_2rtest, std::ref(imfif), std::ref(res));
+    t2.join();
+    t1.join();
+    t3.join();
+    std::vector<int> check{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+    ASSERT_EQ(res, check);
+}
 
 int main(int argc, char** argv) {
     ::testing::InitGoogleTest(&argc, argv);

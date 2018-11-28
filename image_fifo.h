@@ -8,12 +8,16 @@
 #include <map>
 #include <mutex>
 #include <list>
+#include <set>
 
 class ImageFIFO final{
 private:
+    size_t counter = 0; // i don't think it needs to be atomic if it is only used in mutex'd sections
     std::mutex ImageGuard;
-    std::list<std::pair<void*, size_t>> free, ready;
-    std::map<void*, size_t> InUseReading, InUseWriting;
+    std::list<void*> free;
+    std::list<std::pair<size_t, void*>> ready;
+    std::map<void*, size_t> InUseWriting;
+    std::set<void*> InUseReading;
     //size_t blockSize, maxBlocks; // I don't use them anywhere except in ctor but I sort of feel like I should? Like some assertions or something?
 public:
     ~ImageFIFO();
