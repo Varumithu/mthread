@@ -18,7 +18,6 @@ private:
     std::list<std::pair<size_t, void*>> ready;
     std::map<void*, size_t> InUseWriting;
     std::set<void*> InUseReading;
-    //size_t blockSize, maxBlocks; // I don't use them anywhere except in ctor but I sort of feel like I should? Like some assertions or something?
 public:
     ~ImageFIFO();
     explicit ImageFIFO(size_t blockSize, size_t maxBlocks);

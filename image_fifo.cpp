@@ -60,4 +60,6 @@ void* ImageFIFO::getFree() {
 ImageFIFO::~ImageFIFO() {
     std::for_each(free.begin(), free.end(), [](void*& cur){ operator delete(cur); });
     std::for_each(ready.begin(), ready.end(), [](const std::pair<size_t, void*>& cur){ operator delete(cur.second);} );
+    std::for_each(InUseReading.begin(), InUseReading.end(), [](void* cur){ operator delete(cur); });
+    std::for_each(InUseWriting.begin(), InUseWriting.end(), [](const std::pair<void*, size_t>& cur){ operator delete(cur.first);} );
 }
