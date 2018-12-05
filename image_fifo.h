@@ -12,6 +12,7 @@
 
 class ImageFIFO final{
 private:
+    void* buffer;
     size_t counter = 0; // i don't think it needs to be atomic if it is only used in mutex'd sections
     std::mutex ImageGuard;
     std::list<void*> free;

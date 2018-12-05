@@ -10,7 +10,12 @@
 ImageFIFO::ImageFIFO(size_t blockSize, size_t maxBlocks) {
 
     free.resize(maxBlocks);
-    std::for_each(free.begin(), free.end(), [blockSize](void*& cur){ cur = operator new(blockSize); });
+    buffer = operator new(blockSize * maxBlocks);
+    auto cur = free.begin();
+    for (size_t i = 0; i < maxBlocks; ++i) {
+        *cur = reinterpret_cast<void*>(reinterpret_cast<char*>(buffer) + i * blockSize);
+        ++cur;
+    }
 }
 
 void ImageFIFO::addReady(void *data) {
@@ -58,8 +63,5 @@ void* ImageFIFO::getFree() {
 }
 
 ImageFIFO::~ImageFIFO() {
-    std::for_each(free.begin(), free.end(), [](void*& cur){ operator delete(cur); });
-    std::for_each(ready.begin(), ready.end(), [](const std::pair<size_t, void*>& cur){ operator delete(cur.second);} );
-    std::for_each(InUseReading.begin(), InUseReading.end(), [](void* cur){ operator delete(cur); });
-    std::for_each(InUseWriting.begin(), InUseWriting.end(), [](const std::pair<void*, size_t>& cur){ operator delete(cur.first);} );
+    operator delete(buffer);
 }

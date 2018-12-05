@@ -62,11 +62,13 @@ TEST(FIFO_testing, single_thread_test) {
     int* cur;
     for (size_t i = 0; i < 10; ++i) {
         cur = reinterpret_cast<int*>(imfif.getFree());
+        ASSERT_FALSE(cur == nullptr);
         *cur = arr[i];
         imfif.addReady(cur);
     }
     for (size_t i = 0; i < 10; ++i) {
         cur = reinterpret_cast<int*>(imfif.getReady());
+        ASSERT_FALSE(cur == nullptr);
         ASSERT_EQ(arr[i], *cur);
         imfif.addFree(cur);
     }
