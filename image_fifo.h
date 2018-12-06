@@ -9,9 +9,13 @@
 #include <mutex>
 #include <list>
 #include <set>
+#include <vector>
 
 class ImageFIFO final{
 private:
+    std::vector<bool> isReady, isFree;
+    size_t blockSize, maxBlocks;
+    size_t ready_pointer, free_pointer;
     void* buffer;
     size_t counter = 0; // i don't think it needs to be atomic if it is only used in mutex'd sections
     std::mutex ImageGuard;

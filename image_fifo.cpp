@@ -7,9 +7,12 @@
 #include <algorithm>
 #include <cassert>
 
-ImageFIFO::ImageFIFO(size_t blockSize, size_t maxBlocks) {
-
+ImageFIFO::ImageFIFO(size_t blockSize, size_t maxBlocks) : blockSize(blockSize), maxBlocks(maxBlocks){
+    ready_pointer = maxBlocks;
+    free_pointer = 0;
     free.resize(maxBlocks);
+    isFree = std::vector<bool>(true);
+    isReady = std::vector<bool>(false);
     buffer = operator new(blockSize * maxBlocks);
     auto cur = free.begin();
     for (size_t i = 0; i < maxBlocks; ++i) {
@@ -19,11 +22,9 @@ ImageFIFO::ImageFIFO(size_t blockSize, size_t maxBlocks) {
 }
 
 void ImageFIFO::addReady(void *data) {
+    char* chdata = reinterpret_cast<char*>(data);
     std::lock_guard<std::mutex> guard(ImageGuard);
-    auto ind = InUseWriting.find(data);
-    assert(ind != InUseWriting.end()); // since it is not good to throw exceptions from shared stuff and something is really broke in this case, i just assert. The lecturer said we could do so
-    ready.push_back({ind->second, data});
-    InUseWriting.erase(ind);
+
 }
 
 void* ImageFIFO::getReady() {
@@ -53,11 +54,9 @@ void* ImageFIFO::getFree() {
     void* return_val = nullptr;
     std::lock_guard<std::mutex> guard(ImageGuard);
 
-    if (free.size() > 0) {
-        return_val = *free.begin();
-        InUseWriting[return_val] = this->counter;
-        ++counter;
-        free.erase(free.begin());
+    if (!(free_pointer < maxBlocks)) {
+        return_val = reinterpret_cast<void*>(reinterpret_cast<char*>(buffer) + free_pointer * blockSize);
+        ++free_pointer;
     }
     return return_val;
 }
